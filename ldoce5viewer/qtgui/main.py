@@ -6,6 +6,7 @@ from difflib import SequenceMatcher
 from functools import partial
 from operator import itemgetter
 
+from PySide6 import QtGui, QtPrintSupport
 from PySide6.QtPrintSupport import QPrintPreviewDialog, QPrintDialog, QPrinter
 from PySide6.QtWebEngineCore import QWebEngineUrlScheme, QWebEngineFindTextResult
 from PySide6.QtWidgets import *
@@ -40,7 +41,6 @@ _INTERVAL_AUTO_PRON = 500
 _LOCAL_SCHEMES = frozenset(("dict", "static", "search", "audio", "lookup"))
 _HELP_PAGE_URL = "https://forward-backward.co.jp/ldoce5viewer/manual/"
 
-
 # Identifiers for lazy-loaded objects
 _LAZY_INCREMENTAL = "incremental"
 _LAZY_FTS_HWDPHR = "fts_hwdphr"
@@ -49,13 +49,13 @@ _LAZY_FTS_HWDPHR_ASYNC = "fts_hwdphr_async"
 _LAZY_ADVSEARCH_WINDOW = "advsearch_window"
 _LAZY_PRINTER = "printer"
 
-
 _IS_OSX = sys.platform.startswith("darwin")
 
 
 def _incr_delay_func(count):
     x = max(0.3, min(1, float(count) / _INCREMENTAL_LIMIT))
     return int(_MAX_DELAY_UPDATE_INDEX * x)
+
 
 class MainWindow(QMainWindow):
 
@@ -145,7 +145,6 @@ class MainWindow(QMainWindow):
 
         # Click the dock icon (macOS)
         if objc:
-
             def applicationShouldHandleReopen_hasVisibleWindows_(s, a, f):
                 self.show()
 
@@ -205,26 +204,26 @@ class MainWindow(QMainWindow):
         le = self._ui.lineEditSearch
 
         if (
-            key == Qt.Key.Key_Down
-            or (key == Qt.Key.Key_J and modifiers == ctrl)
-            or (key == Qt.Key.Key_Return and modifiers == Qt.KeyboardModifier.NoModifier)
+                key == Qt.Key.Key_Down
+                or (key == Qt.Key.Key_J and modifiers == ctrl)
+                or (key == Qt.Key.Key_Return and modifiers == Qt.KeyboardModifier.NoModifier)
         ):
             self.selectItemRelative(1)
         elif (
-            key == Qt.Key.Key_Up
-            or (key == Qt.Key.Key_K and modifiers == ctrl)
-            or (key == Qt.Key.Key_Return and modifiers == Qt.KeyboardModifier.ShiftModifier)
+                key == Qt.Key.Key_Up
+                or (key == Qt.Key.Key_K and modifiers == ctrl)
+                or (key == Qt.Key.Key_Return and modifiers == Qt.KeyboardModifier.ShiftModifier)
         ):
             self.selectItemRelative(-1)
         elif key == Qt.Key.Key_Backspace:
             le.setFocus()
             le.setText(self._ui.lineEditSearch.text()[:-1])
         elif key in (
-            Qt.Key.Key_Space,
-            Qt.Key.Key_PageDown,
-            Qt.Key.Key_PageUp,
-            Qt.Key.Key_Home,
-            Qt.Key.Key_End,
+                Qt.Key.Key_Space,
+                Qt.Key.Key_PageDown,
+                Qt.Key.Key_PageUp,
+                Qt.Key.Key_Home,
+                Qt.Key.Key_End,
         ):
             self._ui.webView.setFocus()
             self._ui.webView.keyPressEvent(event)
@@ -243,15 +242,15 @@ class MainWindow(QMainWindow):
 
         if (not event.isAutoRepeat()) and mouse_buttons == Qt.MouseButton.NoButton:
             if (
-                key == Qt.Key.Key_Down
-                or (key == Qt.Key.Key_J and modifiers == ctrl)
-                or (key == Qt.Key.Key_Return and modifiers == Qt.KeyboardModifier.NoModifier)
+                    key == Qt.Key.Key_Down
+                    or (key == Qt.Key.Key_J and modifiers == ctrl)
+                    or (key == Qt.Key.Key_Return and modifiers == Qt.KeyboardModifier.NoModifier)
             ):
                 self._loadItem()
             elif (
-                key == Qt.Key.Key_Up
-                or (key == Qt.Key.Key_K and modifiers == ctrl)
-                or (key == Qt.Key.Key_Return and modifiers == Qt.KeyboardModifier.ShiftModifier)
+                    key == Qt.Key.Key_Up
+                    or (key == Qt.Key.Key_K and modifiers == ctrl)
+                    or (key == Qt.Key.Key_Return and modifiers == Qt.KeyboardModifier.ShiftModifier)
             ):
                 self._loadItem()
 
@@ -297,11 +296,11 @@ class MainWindow(QMainWindow):
 
         query = self._ui.lineEditSearch.text().strip()
         if (
-            incr_res is not None
-            and full_res is not None
-            and len(incr_res) == 0
-            and len(full_res) == 0
-            and len(query.split()) == 1
+                incr_res is not None
+                and full_res is not None
+                and len(incr_res) == 0
+                and len(full_res) == 0
+                and len(query.split()) == 1
         ):
             self._timerSpellCorrection.start(200)
 
@@ -571,7 +570,7 @@ class MainWindow(QMainWindow):
     def _onUrlChanged(self, url):
         history = self._ui.webView.history()
         if history.currentItemIndex() == 1 and history.itemAt(0).url() == QUrl(
-            "about:blank"
+                "about:blank"
         ):
             history.clear()
 
@@ -587,10 +586,10 @@ class MainWindow(QMainWindow):
 
             items = [(idx, item) for (idx, item) in enumerate(items)]
             if back:
-                items = items[max(0, curidx - 20) : curidx]
+                items = items[max(0, curidx - 20): curidx]
                 items.reverse()
             else:
-                items = items[curidx + 1 : curidx + 1 + 20]
+                items = items[curidx + 1: curidx + 1 + 20]
             urlset = set()
             menu.clear()
             for idx, hitem in items:
@@ -818,22 +817,30 @@ class MainWindow(QMainWindow):
     # -------
     # Print
     # -------
-
-    def printPreview(self):
+    def print_preview(self):
         ui = self._ui
-        printer = self._printer
-        printer.setDocName(ui.webView.title() or "")
-        dialog = QPrintPreviewDialog(printer, self)
-        dialog.paintRequested.connect(ui.webView.print_)
-        dialog.exec_()
 
-    def print_(self):
-        ui = self._ui
-        printer = self._printer
+        # self._ui.webView.printToPdf("test.pdf")
+
+        # printer = self._printer
+        printer = QtPrintSupport.QPrinter(QtPrintSupport.QPrinter.HighResolution)
         printer.setDocName(ui.webView.title() or "")
+
+        preview = QPrintPreviewDialog(printer)
+        preview.paintRequested.connect(self.handle_paint_request)
+        preview.exec()
+
+    def handle_paint_request(self, printer):
+        self._ui.webView.print(printer)
+
+    def print(self):
+        # printer = self._printer
+        printer = QtPrintSupport.QPrinter(QtPrintSupport.QPrinter.HighResolution)
+        printer.setDocName(self._ui.webView.title() or "")
+
         dialog = QPrintDialog(printer, self)
-        if dialog.exec_() == QDialog.Accepted:
-            ui.webView.print_(printer)
+        if dialog.exec() == QDialog.Accepted:
+            self._ui.webView.print(printer)
 
     # ------------
     # Debugging
@@ -1051,13 +1058,13 @@ class MainWindow(QMainWindow):
 
         # WebView
         for web_act in (
-            QWebEnginePage.WebAction.OpenLinkInNewWindow,
-            QWebEnginePage.WebAction.DownloadLinkToDisk,
-            QWebEnginePage.WebAction.DownloadImageToDisk,
-            QWebEnginePage.WebAction.CopyLinkToClipboard,
-            QWebEnginePage.WebAction.CopyImageToClipboard,
-            # QWebEnginePage.OpenFrameInNewWindow,
-            # QWebEnginePage.OpenImageInNewWindow,
+                QWebEnginePage.WebAction.OpenLinkInNewWindow,
+                QWebEnginePage.WebAction.DownloadLinkToDisk,
+                QWebEnginePage.WebAction.DownloadImageToDisk,
+                QWebEnginePage.WebAction.CopyLinkToClipboard,
+                QWebEnginePage.WebAction.CopyImageToClipboard,
+                # QWebEnginePage.OpenFrameInNewWindow,
+                # QWebEnginePage.OpenImageInNewWindow,
         ):
             webpage.action(web_act).setEnabled(False)
             webpage.action(web_act).setVisible(False)
@@ -1103,6 +1110,9 @@ class MainWindow(QMainWindow):
         ui.webView.loadFinished.connect(self._onLoadFinished)
         ui.webView.page().findTextFinished.connect(self._find_text_finished)
 
+        # ui.webView.page().printRequested.connect()
+        # ui.webView.page().printFinished.connect()
+
         # Actions
         def act_conn(action, slot):
             action.triggered.connect(slot)
@@ -1112,9 +1122,9 @@ class MainWindow(QMainWindow):
         act_conn(ui.actionCreateIndex, self._show_indexer_dialog)
         act_conn(ui.actionFindNext, self.findNext)
         act_conn(ui.actionFindPrev, self.findPrev)
-        act_conn(ui.actionPrintPreview, self.printPreview)
+        act_conn(ui.actionPrintPreview, self.print_preview)
         act_conn(ui.actionFocusLineEdit, self._onFocusLineEdit)
-        act_conn(ui.actionPrint, self.print_)
+        act_conn(ui.actionPrint, self.print)
         act_conn(ui.actionSearchExamples, self._onSearchExamples)
         act_conn(ui.actionSearchDefinitions, self._onSearchDefinitions)
         act_conn(ui.actionAdvancedSearch, self._onAdvancedSearch)
